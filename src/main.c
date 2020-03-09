@@ -15,6 +15,8 @@ void createMatrix(Matrix* _mz, int num_rows, int num_columns);
 void randomFillLR(int nU, int nI, int nF);
 void copyMatrix(Matrix* mz_src, Matrix* mz_dest);
 void swapMatrices(Matrix* a, Matrix* b);
+void multMatrices(Matrix* a, Matrix* b, Matrix* c);
+void factorization();
 
 int max_iterations = 0;
 double alpha = 0;
@@ -61,7 +63,13 @@ int main(int argc, char* argv[]){
     randomFillLR(num_l, num_c, num_fs);
     copyMatrix(&mz_l, &mz_l_prev);
     copyMatrix(&mz_r, &mz_r_prev);
-
+    for(int a = 0; a < max_iterations; a++){
+        multMatrices(&mz_l,&mz_r,&mz_b);
+        factorization();
+        swapMatrices(&mz_l,&mz_l_prev);
+        swapMatrices(&mz_r,&mz_r_prev);
+        //imprimir para vermos as itera?oes ------------------------------------------
+    }
     //Só imprime------------------------------
     for(int i = 0; i < num_l; i++){
         for(int j = 0; j < num_c; j++){
@@ -130,4 +138,47 @@ void swapMatrices(Matrix* a, Matrix* b){
 
     a->mz = b->mz;
     b->mz = backup;
+}
+
+void multMatrices(Matrix* a, Matrix* b, Matrix* c){
+    int sum = 0;
+    int n=a->num_c;
+    int m=a->num_l;
+    int q=b->num_c;
+    int p=b->num_l;
+    if (n != p){
+        fprintf(stderr, "Erro multiplacar matrizes L e R");
+        exit(-1);
+    }else{
+        for (int e = 0; e < m; e++) {
+          for (int d = 0; d < q; d++) {
+            for (int k = 0; k < p; k++) {
+                sum = sum + a->mz[e][k]*b->mz[k][d];
+            }
+            c->mz[e][d] = sum;
+            sum = 0;
+          }
+        }
+    }
+}
+
+void factorization(){
+    double sum_l=0;
+    double sum_r=0;
+    for(int i = 0; i < mz_a->num_l; i++){
+        for(int j = 0; j < mz_a->num_c; j++){
+            if (mz_a->mz[i][j] != 0){
+                for(int k = 0; k < mz_a->num_c; k++){
+                    for(int n = 0; n < mz_a->num_c; n++){
+                        sum_l = sum_l + 2 * (mz_a->mz[i][n] - mz_b->mz[i][n]) * (-1 * mz_r_prev->mz[k][n]); 
+                        sum_r = sum_r + 2 * (mz_a->mz[n][j] - mz_b->mz[n][j]) * (-1 * mz_l_prev->mz[n][k]); 
+                    }
+                    mz_l->mz[i][k] = mz_l_prev->mz[i][k] - alpha * sum_l;
+                    sum_l=0;
+                    mz_r->mz[k][j] = mz_r_prev->mz[k][j] - alpha * sum_r;
+                    sum_r=0;
+                }
+            }
+        }
+    }
 }
