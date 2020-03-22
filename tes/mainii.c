@@ -9,7 +9,6 @@ void randomFillLR(int nU, int nI, int nF);
 void copyMatrix();
 void multMatrices();
 void factorization();
-void swapMatrices();
 
 int max_iterations = 0;
 double alpha = 0;
@@ -27,7 +26,6 @@ typedef struct Non_zeros{
 
 Vect* mz_a2 = NULL;//-----------------------------------------------------------------------------------------
 
-double** mz_a = NULL;
 double** mz_l = NULL;
 double** mz_r = NULL;
 double** mz_b = NULL;
@@ -39,7 +37,8 @@ int main(int argc, char* argv[]){
     int lin = 0;
     int col = 0;
     double value = 0;
-
+    int count = 0;
+    
     if(argc != 2){
         fprintf(stderr, "Erro nos argumentos");
         exit(-1);
@@ -51,31 +50,24 @@ int main(int argc, char* argv[]){
     fscanf(fp, "%lf\n", &alpha);
     fscanf(fp, "%d\n", &num_fs);
     fscanf(fp, "%d %d %d", &num_l, &num_c, &non_zero_entries);
-    //-----------------------------------------------------------------------------------------
-    mz_a2 = (Vect*) malloc(non_zero_entries * sizeof(Vect));
+    
+    mz_a2 = (Vect*) malloc(non_zero_entries * sizeof(Vect));//Create matrix A_non_zeros
     if(mz_a2 == NULL){
         fprintf(stderr, "Erro alocar nova matrix\n");
         exit(-1);
     }
-    //-----------------------------------------------------------------------------------------
-    // createMatrix(&mz_a, num_l, num_c);//Create matrix A
+    
     createMatrix(&mz_l, num_l, num_fs);//Create matrix L
     createMatrix(&mz_r, num_fs, num_c);//Create matrix R
     createMatrix(&mz_b, num_l, num_c);//Create matrix B
     createMatrix(&mz_l_prev, num_l, num_fs);//Create matrix L_p
     createMatrix(&mz_r_prev, num_fs, num_c);//Create matrix R_p
     
-    //-----------------------------------------------------------------------------------------
-    int count = 0;
-    //-----------------------------------------------------------------------------------------
     while(!feof(fp) && fscanf(fp, "%d %d %lf" , &lin, &col, &value)){
-        // mz_a[lin][col] = value;
-        //-----------------------------------------------------------------------------------------
         mz_a2[count].x = lin;
         mz_a2[count].y = col;
         mz_a2[count].val = value;
         count++;
-        //-----------------------------------------------------------------------------------------
     }
    
             // fprintf(stdout, "A2\n");
@@ -86,19 +78,11 @@ int main(int argc, char* argv[]){
     
     randomFillLR(num_l, num_c, num_fs);//L and R ramdom fill in. Copy to L_p e R_p
     multMatrices();//B initial
-    //------------------------------------------------
-            // fprintf(stdout, "A\n");
-            // for(int i = 0; i < num_l; i++){
-                // for(int j = 0; j < num_c; j++){
-                    // fprintf(stdout, "%.3f ", mz_a[i][j]);
-                // }
-                // fprintf(stdout, "\n");
-            // }
-            // fprintf(stdout, "\n");
-                       
+                
     for(int a = 0; a < max_iterations; a++){  
         factorization();
     }
+    
     fprintf(stdout, "B\n");
             for(int i = 0; i < num_l; i++){
                 for(int j = 0; j < num_c; j++){
@@ -107,6 +91,7 @@ int main(int argc, char* argv[]){
                 fprintf(stdout, "\n");
             }
             fprintf(stdout, "\n");
+            
     fclose(fp);
     return 0;
 }
@@ -170,18 +155,7 @@ void multMatrices(){
     }  
 }
 
-void swapMatrices(){
-    double** backup_l = mz_l_prev;
-    double** backup_r = mz_r_prev;
-    mz_l_prev=mz_l;
-    mz_r_prev=mz_r;
-    mz_l=backup_l;
-    mz_r=backup_r; 
-}
-
 void factorization(){
-    // double sum_l=0;
-    // double sum_r=0;
     double aux=0;
     for(int i = 0; i < non_zero_entries; i++){
         aux = -1 * alpha * 2 * (mz_a2[i].val - mz_b[mz_a2[i].x][mz_a2[i].y]);
@@ -190,30 +164,6 @@ void factorization(){
             mz_r[k][mz_a2[i].y] += aux * (-1 * mz_l_prev[mz_a2[i].x][k]);
         }
     }
-   
-    
-    // for(int i = 0; i < num_l; i++){
-        // for(int j = 0; j < num_c; j++){
-            // if (mz_a[i][j] != 0){
-                // for(int k = 0; k < num_fs; k++){
-                    // for(int n = 0; n < num_c; n++){
-                        // if (mz_a[i][n] != 0){
-                            // sum_l = sum_l + 2 * (mz_a[i][n] - mz_b[i][n]) * (-1 * mz_r_prev[k][n]);
-                        // }
-                    // }
-                    // for(int n = 0; n < num_l; n++){
-                        // if (mz_a[n][j] != 0){
-                            // sum_r = sum_r + 2 * (mz_a[n][j] - mz_b[n][j]) * (-1 * mz_l_prev[n][k]);
-                        // }                            
-                    // }
-                    // mz_l[i][k] = mz_l_prev[i][k] - alpha * sum_l;
-                    // sum_l=0;
-                    // mz_r[k][j] = mz_r_prev[k][j] - alpha * sum_r;
-                    // sum_r=0;
-                // }
-            // }
-        // }
-    // }
     multMatrices();
     //---------------------------------------------------------------------------------------------------
     // fprintf(stdout, "L\n");
@@ -258,6 +208,5 @@ void factorization(){
     // fprintf(stdout, "\n");
     //-----------------------------------------------------------------------------------------------------------    
     copyMatrix();    
-    //swapMatrices();
 }
 
