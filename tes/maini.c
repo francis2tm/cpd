@@ -10,6 +10,7 @@ void copyMatrix();
 void multMatrices();
 void factorization();
 void swapMatrices();
+void result();
 
 int max_iterations = 0;
 double alpha = 0;
@@ -221,3 +222,23 @@ void factorization(){
     swapMatrices();
 }
 
+void result(){
+    double max_row = 0;
+    int* items = (int*)malloc(num_l * sizeof(int));
+    if(items == NULL){
+        fprintf(stderr, "Erro alocar vetor result\n");
+        exit(-1);
+    }
+    for(int i = 0; i < num_l; i++){
+        for(int j = 0; j < num_c; j++){
+            if(mz_a[i][j] != 0 && mz_b[i][j] > max_row){
+                max_row = mz_b[i][j];
+                items[i]=j;
+            }
+        }
+        max_row = 0;
+    }
+    for(int i = 0; i < num_l; i++){
+        fprintf(stdout, "%d\n", items[i]);
+    }
+}

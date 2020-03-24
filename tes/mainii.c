@@ -9,6 +9,7 @@ void randomFillLR(int nU, int nI, int nF);
 void copyMatrix();
 void multMatrices();
 void factorization();
+void result();
 
 int max_iterations = 0;
 double alpha = 0;
@@ -69,7 +70,7 @@ int main(int argc, char* argv[]){
         mz_a2[count].val = value;
         count++;
     }
-   
+    fclose(fp);
             // fprintf(stdout, "A2\n");
             // for(int i = 0; i < non_zero_entries; i++){
                     // fprintf(stdout, "%d %d %.6f \n", mz_a2[i].x,mz_a2[i].y,mz_a2[i].val);
@@ -82,17 +83,17 @@ int main(int argc, char* argv[]){
     for(int a = 0; a < max_iterations; a++){  
         factorization();
     }
-    
-    fprintf(stdout, "B\n");
-            for(int i = 0; i < num_l; i++){
-                for(int j = 0; j < num_c; j++){
-                    fprintf(stdout, "%f ", mz_b[i][j]);
-                }
-                fprintf(stdout, "\n");
-            }
-            fprintf(stdout, "\n");
+    result();
+    // fprintf(stdout, "B\n");
+            // for(int i = 0; i < num_l; i++){
+                // for(int j = 0; j < num_c; j++){
+                    // fprintf(stdout, "%f ", mz_b[i][j]);
+                // }
+                // fprintf(stdout, "\n");
+            // }
+            // fprintf(stdout, "\n");
             
-    fclose(fp);
+    
     return 0;
 }
 
@@ -109,11 +110,11 @@ void createMatrix(double*** _mz, int num_rows, int num_columns){
             exit(-1);
         }
     }
-    for(int i = 0; i < num_rows; i++){
-        for(int j = 0; j < num_columns; j++){
-            (*_mz)[i][j] = 0;
-        }
-    }
+    // for(int i = 0; i < num_rows; i++){
+        // for(int j = 0; j < num_columns; j++){
+            // (*_mz)[i][j] = 0;
+        // }
+    // }
 }
 
 void randomFillLR(int nU, int nI, int nF){
@@ -210,3 +211,26 @@ void factorization(){
     copyMatrix();    
 }
 
+void result(){
+    double max_row = 0;
+    int* items = (int*)malloc(num_l * sizeof(int));
+    if(items == NULL){
+        fprintf(stderr, "Erro alocar vetor result\n");
+        exit(-1);
+    }
+    for(int i = 0; i < non_zero_entries; i++){
+        mz_b[mz_a2[i].x][mz_a2[i].y] = 0;
+    }
+    for(int i = 0; i < num_l; i++){
+        for(int j = 0; j < num_c; j++){
+            if(mz_b[i][j] > max_row){
+                max_row = mz_b[i][j];
+                items[i]=j;
+            }
+        }
+        max_row = 0;
+    }
+    for(int i = 0; i < num_l; i++){
+        fprintf(stdout, "%d\n", items[i]);
+    }
+}
