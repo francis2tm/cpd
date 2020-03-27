@@ -187,7 +187,7 @@ void factorization(){
                 mz_l[mz_a2[i].x][k] += -1 * alpha * mz_l_sum[mz_a2[i].x][k];
                 mz_r[mz_a2[i].y][k] += -1 * alpha * mz_r_sum[mz_a2[i].y][k];
                 mz_l_sum[mz_a2[i].x][k] = 0;
-                mz_r_sum[mz_a2[i].y][k] = 0; 
+                mz_r_sum[mz_a2[i].y][k] = 0;
             }
         }
 
