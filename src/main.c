@@ -87,9 +87,14 @@ int main(int argc, char* argv[]){
             // }
             // fprintf(stdout, "\n");
     
-    for(int a = 0; a < max_iterations; a++){  
-        factorization();
-    }
+
+
+    factorization();
+
+
+
+
+
     multMatrices_final();//B final
     result();
     // fprintf(stdout, "B\n");
@@ -165,21 +170,29 @@ void multMatrices_intre(){
 
 void factorization(){
     double aux = 0;
-    for(int i = 0; i < non_zero_entries; i++){
-        aux = 2 * (mz_a2[i].val - mz_b[mz_a2[i].x][mz_a2[i].y]);
-        for(int k = 0; k < num_fs; k++){
-            mz_l_sum[mz_a2[i].x][k] += aux * (-1 * mz_r[mz_a2[i].y][k]);
-            mz_r_sum[mz_a2[i].y][k] += aux * (-1 * mz_l[mz_a2[i].x][k]);
+    int i;
+    int k;
+
+    for(int count = 0; count < max_iterations; count++){  
+
+        for(i = 0; i < non_zero_entries; i++){
+            aux = 2 * (mz_a2[i].val - mz_b[mz_a2[i].x][mz_a2[i].y]);
+            for(k = 0; k < num_fs; k++){
+                mz_l_sum[mz_a2[i].x][k] += aux * (-1 * mz_r[mz_a2[i].y][k]);
+                mz_r_sum[mz_a2[i].y][k] += aux * (-1 * mz_l[mz_a2[i].x][k]);
+            }
         }
-    }
-    for(int i = 0; i < non_zero_entries; i++){
-        for(int k = 0; k < num_fs; k++){
-            mz_l[mz_a2[i].x][k] += -1 * alpha * mz_l_sum[mz_a2[i].x][k];
-            mz_r[mz_a2[i].y][k] += -1 * alpha * mz_r_sum[mz_a2[i].y][k];
-            mz_l_sum[mz_a2[i].x][k] = 0;
-            mz_r_sum[mz_a2[i].y][k] = 0;
+        for(i = 0; i < non_zero_entries; i++){
+            for(k = 0; k < num_fs; k++){
+                mz_l[mz_a2[i].x][k] += -1 * alpha * mz_l_sum[mz_a2[i].x][k];
+                mz_r[mz_a2[i].y][k] += -1 * alpha * mz_r_sum[mz_a2[i].y][k];
+                mz_l_sum[mz_a2[i].x][k] = 0;
+                mz_r_sum[mz_a2[i].y][k] = 0; 
+            }
         }
+
     }
+    
     multMatrices_intre();
     //---------------------------------------------------------------------------------------------------
     // fprintf(stdout, "L\n");
