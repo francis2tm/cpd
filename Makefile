@@ -4,7 +4,7 @@
 
 TARGET_EXEC ?=./matFact
 LDFLAGS =
-CFLAGS = -Wall -std=c99 -g
+CFLAGS = -Wall -std=c99 -O0
 CC =gcc
 
 BUILD_DIR ?= ./build
