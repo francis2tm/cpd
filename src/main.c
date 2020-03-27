@@ -172,7 +172,7 @@ void factorization(){
     double aux = 0;
     int i;
     int k;
-    
+
     for(int count = 0; count < max_iterations; count++){  
 
         for(i = 0; i < non_zero_entries; i++){
@@ -187,7 +187,7 @@ void factorization(){
                 mz_l[mz_a2[i].x][k] += -1 * alpha * mz_l_sum[mz_a2[i].x][k];
                 mz_r[mz_a2[i].y][k] += -1 * alpha * mz_r_sum[mz_a2[i].y][k];
                 mz_l_sum[mz_a2[i].x][k] = 0;
-                mz_r_sum[mz_a2[i].y][k] = 0;
+                mz_r_sum[mz_a2[i].y][k] = 0; 
             }
         }
 
