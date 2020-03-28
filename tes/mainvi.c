@@ -70,7 +70,12 @@ int main(int argc, char* argv[]){
         mz_a2[count].val = value;
         count++;
     }
+    
     fclose(fp);
+    
+
+    
+    
             // fprintf(stdout, "A2\n");
             // for(int i = 0; i < non_zero_entries; i++){
                     // fprintf(stdout, "%d %d %.6f \n", mz_a2[i].x,mz_a2[i].y,mz_a2[i].val);
@@ -90,9 +95,11 @@ int main(int argc, char* argv[]){
             // }
             // fprintf(stdout, "\n");
     
-    for(int a = 0; a < max_iterations; a++){  
-        factorization();
-    }
+
+
+    factorization();
+
+
     multMatrices_final();//B final
     result();
     // fprintf(stdout, "B\n");
@@ -121,7 +128,7 @@ void createMatrix(double*** _mz, int num_rows, int num_columns, int ini){
             exit(-1);
         }
     }
-    if (ini == 1){
+    if (ini == 1){ //L_sum and R_sum initialization
         for(int i = 0; i < num_rows; i++){
             for(int j = 0; j < num_columns; j++){
                 (*_mz)[i][j] = 0;
@@ -168,22 +175,30 @@ void multMatrices_intre(){
 
 void factorization(){
     double aux = 0;
-    for(int i = 0; i < non_zero_entries; i++){
-        aux = 2 * (mz_a2[i].val - mz_b[mz_a2[i].x][mz_a2[i].y]);
-        for(int k = 0; k < num_fs; k++){
-            mz_l_sum[mz_a2[i].x][k] += aux * (-1 * mz_r[mz_a2[i].y][k]);
-            mz_r_sum[mz_a2[i].y][k] += aux * (-1 * mz_l[mz_a2[i].x][k]);
+    int i;
+    int k;
+
+    for(int count = 0; count < max_iterations; count++){  
+
+        for(i = 0; i < non_zero_entries; i++){
+            aux = 2 * (mz_a2[i].val - mz_b[mz_a2[i].x][mz_a2[i].y]);
+            for(k = 0; k < num_fs; k++){
+                mz_l_sum[mz_a2[i].x][k] += aux * (-1 * mz_r[mz_a2[i].y][k]);
+                mz_r_sum[mz_a2[i].y][k] += aux * (-1 * mz_l[mz_a2[i].x][k]);
+            }
         }
-    }
-    for(int i = 0; i < non_zero_entries; i++){
-        for(int k = 0; k < num_fs; k++){
-            mz_l[mz_a2[i].x][k] += -1 * alpha * mz_l_sum[mz_a2[i].x][k];
-            mz_r[mz_a2[i].y][k] += -1 * alpha * mz_r_sum[mz_a2[i].y][k];
-            mz_l_sum[mz_a2[i].x][k] = 0;
-            mz_r_sum[mz_a2[i].y][k] = 0;
+        for(i = 0; i < non_zero_entries; i++){
+            for(k = 0; k < num_fs; k++){
+                mz_l[mz_a2[i].x][k] += -1 * alpha * mz_l_sum[mz_a2[i].x][k];
+                mz_r[mz_a2[i].y][k] += -1 * alpha * mz_r_sum[mz_a2[i].y][k];
+                mz_l_sum[mz_a2[i].x][k] = 0;
+                mz_r_sum[mz_a2[i].y][k] = 0;
+            }
         }
+        multMatrices_intre();
     }
-    multMatrices_intre();
+    
+    
     //---------------------------------------------------------------------------------------------------
     // fprintf(stdout, "L\n");
     // for(int i = 0; i < num_l; i++){
@@ -209,21 +224,6 @@ void factorization(){
         // fprintf(stdout, "\n");
     // }
     // fprintf(stdout, "\n");
-    // fprintf(stdout, "L_p\n");
-    // for(int i = 0; i < num_l; i++){
-        // for(int j = 0; j < num_fs; j++){
-            // fprintf(stdout, "%f ", mz_l_prev[i][j]);
-        // }
-        // fprintf(stdout, "\n");
-    // }
-    // fprintf(stdout, "\n");
-    // fprintf(stdout, "R_p\n");
-    // for(int i = 0; i < num_fs; i++){
-        // for(int j = 0; j < num_c; j++){
-            // fprintf(stdout, "%f ", mz_r_prev[i][j]);
-        // }
-        // fprintf(stdout, "\n");
-    // }
     // fprintf(stdout, "\n");
     //-----------------------------------------------------------------------------------------------------------       
 }
@@ -235,6 +235,11 @@ void result(){
         fprintf(stderr, "Erro alocar vetor result\n");
         exit(-1);
     }
+    // FILE* fp = fopen("exit_test.txt", "w");
+    // if(fp == NULL){
+        // fprintf(stderr, "Erro abrir ficheiro");
+        // exit(-1);
+    // }
     for(int i = 0; i < non_zero_entries; i++){
         mz_b[mz_a2[i].x][mz_a2[i].y] = 0;
     }
@@ -250,4 +255,5 @@ void result(){
     for(int i = 0; i < num_l; i++){
         fprintf(stdout, "%d\n", items[i]);
     }
+    // fclose(fp);
 }

@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "io.h"
 
 #define RAND01 ((double)rand() / (double)RAND_MAX)
 
@@ -42,7 +41,11 @@ int main(int argc, char* argv[]){
         exit(-1);
     }
     
-    fp = openFile(argv[1]);
+    fp = fopen(argv[1], "r");
+    if(fp == NULL){
+        fprintf(stderr, "Erro abrir ficheiro");
+        exit(-1);
+    }
     
     fscanf(fp, "%d\n", &max_iterations);
     fscanf(fp, "%lf\n", &alpha);
