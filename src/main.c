@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <omp.h>
 
 #define RAND01 ((double)rand() / (double)RAND_MAX)
 
@@ -121,13 +122,18 @@ void createMatrix(double*** _mz, int num_rows, int num_columns, int ini){
             exit(-1);
         }
     }
+
     if (ini == 1){
-        for(int i = 0; i < num_rows; i++){
-            for(int j = 0; j < num_columns; j++){
-                (*_mz)[i][j] = 0;
+        #pragma omp parallel for
+        {
+            for(int i = 0; i < num_rows; i++){
+                for(int j = 0; j < num_columns; j++){
+                    (*_mz)[i][j] = 0;
+                }
             }
         }
     }
+    
 }
 
 void randomFillLR(int nU, int nI, int nF){
