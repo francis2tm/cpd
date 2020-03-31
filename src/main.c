@@ -94,17 +94,17 @@ int main(int argc, char* argv[]){
         factorization();
     }
     multMatrices_final();//B final
-    result();
-    // fprintf(stdout, "B\n");
-            // for(int i = 0; i < num_l; i++){
-                // for(int j = 0; j < num_c; j++){
-                    // fprintf(stdout, "%f ", mz_b[i][j]);
-                // }
-                // fprintf(stdout, "\n");
-            // }
-            // fprintf(stdout, "\n");
-            
     
+    fprintf(stdout, "B\n");
+            for(int i = 0; i < num_l; i++){
+                for(int j = 0; j < num_c; j++){
+                    fprintf(stdout, "%f ", mz_b[i][j]);
+                }
+                fprintf(stdout, "\n");
+            }
+            fprintf(stdout, "\n");
+            
+    result();
     return 0;
 }
 
@@ -147,7 +147,7 @@ void multMatrices_final(){
     for (int e = 0; e < num_l; e++) {
         for (int d = 0; d < num_c; d++) {
             for (int k = 0; k < num_fs; k++) {
-                sum = sum + (mz_l[e][k])*(mz_r[d][k]);
+                sum += (mz_l[e][k])*(mz_r[d][k]);
             }
             mz_b[e][d] = sum;
             sum = 0;
