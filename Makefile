@@ -3,7 +3,7 @@
 #Francisco Melo
 
 TARGET_EXEC ?=./matFact
-LDFLAGS =
+LDFLAGS = 
 CFLAGS = -Wall -std=c99 -O0
 CC =gcc
 
