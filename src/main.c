@@ -7,7 +7,6 @@
 void createMatrix(double*** _mz, int num_rows, int num_columns, int ini);
 void randomFillLR(int nU, int nI, int nF);
 void multMatrices_final();
-void multMatrices_intre();
 void factorization();
 void result();
 
@@ -91,19 +90,19 @@ int main(int argc, char* argv[]){
             // }
             // fprintf(stdout, "\n");
     
-    for(int a = 0; a < max_iterations; a++){  
-        factorization();
-    }
+     
+    factorization();
+    
     multMatrices_final();//B final
     
-    fprintf(stdout, "B\n");
-            for(int i = 0; i < num_l; i++){
-                for(int j = 0; j < num_c; j++){
-                    fprintf(stdout, "%f ", mz_b[i][j]);
-                }
-                fprintf(stdout, "\n");
-            }
-            fprintf(stdout, "\n");
+    // fprintf(stdout, "B\n");
+            // for(int i = 0; i < num_l; i++){
+                // for(int j = 0; j < num_c; j++){
+                    // fprintf(stdout, "%f ", mz_b[i][j]);
+                // }
+                // fprintf(stdout, "\n");
+            // }
+            // fprintf(stdout, "\n");
             
     result();
     return 0;
@@ -124,12 +123,10 @@ void createMatrix(double*** _mz, int num_rows, int num_columns, int ini){
     }
 
     if (ini == 1){
-        #pragma omp parallel for
-        {
-            for(int i = 0; i < num_rows; i++){
-                for(int j = 0; j < num_columns; j++){
-                    (*_mz)[i][j] = 0;
-                }
+#pragma omp parallel for
+        for(int i = 0; i < num_rows; i++){
+            for(int j = 0; j < num_columns; j++){
+                (*_mz)[i][j] = 0;
             }
         }
     }
@@ -150,6 +147,7 @@ void randomFillLR(int nU, int nI, int nF){
 
 void multMatrices_final(){
     double sum = 0;
+#pragma omp parallel for private(sum)    
     for (int e = 0; e < num_l; e++) {
         for (int d = 0; d < num_c; d++) {
             for (int k = 0; k < num_fs; k++) {
@@ -161,35 +159,39 @@ void multMatrices_final(){
     }  
 }
 
-void multMatrices_intre(){
-    double sum = 0;
-    for(int i = 0; i < non_zero_entries; i++){
-        for (int k = 0; k < num_fs; k++) {
-            sum = sum + (mz_l[mz_a2[i].x][k])*(mz_r[mz_a2[i].y][k]);
-        }
-        mz_b[mz_a2[i].x][mz_a2[i].y] = sum;
-        sum = 0;
-    }
-}
-
 void factorization(){
     double aux = 0;
-    for(int i = 0; i < non_zero_entries; i++){
-        aux = 2 * (mz_a2[i].val - mz_b[mz_a2[i].x][mz_a2[i].y]);
-        for(int k = 0; k < num_fs; k++){
-            mz_l_sum[mz_a2[i].x][k] += aux * (-1 * mz_r[mz_a2[i].y][k]);
-            mz_r_sum[mz_a2[i].y][k] += aux * (-1 * mz_l[mz_a2[i].x][k]);
+    for(int count = 0; count < max_iterations; count++){
+#pragma omp parallel private(aux)
+  {
+#pragma omp for    
+        for(int i = 0; i < non_zero_entries; i++){
+            aux = 2 * (mz_a2[i].val - mz_b[mz_a2[i].x][mz_a2[i].y]);
+            for(int k = 0; k < num_fs; k++){
+                mz_l_sum[mz_a2[i].x][k] += aux * (-1 * mz_r[mz_a2[i].y][k]);
+                mz_r_sum[mz_a2[i].y][k] += aux * (-1 * mz_l[mz_a2[i].x][k]);
+            }
         }
-    }
-    for(int i = 0; i < non_zero_entries; i++){
-        for(int k = 0; k < num_fs; k++){
-            mz_l[mz_a2[i].x][k] += -1 * alpha * mz_l_sum[mz_a2[i].x][k];
-            mz_r[mz_a2[i].y][k] += -1 * alpha * mz_r_sum[mz_a2[i].y][k];
-            mz_l_sum[mz_a2[i].x][k] = 0;
-            mz_r_sum[mz_a2[i].y][k] = 0;
+#pragma omp for
+        for(int i = 0; i < non_zero_entries; i++){
+            for(int k = 0; k < num_fs; k++){
+                mz_l[mz_a2[i].x][k] += -1 * alpha * mz_l_sum[mz_a2[i].x][k];
+                mz_r[mz_a2[i].y][k] += -1 * alpha * mz_r_sum[mz_a2[i].y][k];
+                mz_l_sum[mz_a2[i].x][k] = 0;
+                mz_r_sum[mz_a2[i].y][k] = 0;
+            }
         }
+        double sum = 0;
+#pragma omp for private(sum)     
+        for(int i = 0; i < non_zero_entries; i++){
+            for (int k = 0; k < num_fs; k++) {
+                sum = sum + (mz_l[mz_a2[i].x][k])*(mz_r[mz_a2[i].y][k]);
+            }
+            mz_b[mz_a2[i].x][mz_a2[i].y] = sum;
+            sum = 0;
+        }
+  }
     }
-    multMatrices_intre();
     //---------------------------------------------------------------------------------------------------
     // fprintf(stdout, "L\n");
     // for(int i = 0; i < num_l; i++){
@@ -241,9 +243,18 @@ void result(){
         fprintf(stderr, "Erro alocar vetor result\n");
         exit(-1);
     }
+    FILE* fp = fopen("exit_test.txt", "w");
+    if(fp == NULL){
+        fprintf(stderr, "Erro abrir ficheiro");
+        exit(-1);
+    }
+#pragma omp parallel private(max_row)
+ {
+#pragma omp parallel for    
     for(int i = 0; i < non_zero_entries; i++){
         mz_b[mz_a2[i].x][mz_a2[i].y] = 0;
     }
+#pragma omp parallel for    
     for(int i = 0; i < num_l; i++){
         for(int j = 0; j < num_c; j++){
             if(mz_b[i][j] > max_row){
@@ -253,7 +264,9 @@ void result(){
         }
         max_row = 0;
     }
+ }
     for(int i = 0; i < num_l; i++){
-        fprintf(stdout, "%d\n", items[i]);
+        fprintf(fp, "%d\n", items[i]);
     }
+    fclose(fp);
 }
