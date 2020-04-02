@@ -153,18 +153,22 @@ void multMatrices_final(){
     for (int e = 0; e < num_l; e++) {
         for (int d = 0; d < num_c; d++) {
             for (int k = 0; k < num_fs; k++) {
-                mz_b[e][d] += (mz_l[e][k])*(mz_r[d][k]);
+                sum += (mz_l[e][k])*(mz_r[d][k]);
             }
+            mz_b[e][d] = sum;
+            sum = 0;
         }
-    }  
+    }   
 }
 
 void multMatrices_intre(){
     for(int i = 0; i < non_zero_entries; i++){
-        for (int k = 0; k < num_fs; k++) {
-            mz_b[mz_a2[i].x][mz_a2[i].y] += (mz_l[mz_a2[i].x][k])*(mz_r[mz_a2[i].y][k]);
+            for (int k = 0; k < num_fs; k++) {
+                sum += (mz_l[mz_a2[i].x][k])*(mz_r[mz_a2[i].y][k]);
+            }
+            mz_b[mz_a2[i].x][mz_a2[i].y] = sum;
+            sum = 0;
         }
-    }
 }
 
 void factorization(){

@@ -4,7 +4,7 @@
 
 #define RAND01 ((double)rand() / (double)RAND_MAX)
 
-void createMatrix(double*** _mz, int num_rows, int num_columns, int ini);
+void createMatrix(double*** _mz, int num_rows, int num_columns);
 void randomFillLR(int nU, int nI, int nF);
 void multMatrices_final();
 void factorization();
@@ -58,11 +58,11 @@ int main(int argc, char* argv[]){
         exit(-1);
     }
     
-    createMatrix(&mz_l, num_l, num_fs, 0);//Create matrix L
-    createMatrix(&mz_r, num_c, num_fs, 0);//Create matrix R transpose
-    createMatrix(&mz_b, num_l, num_c, 0);//Create matrix B
-    createMatrix(&mz_l_sum, num_l, num_fs, 1);//Create and initialize matrix L_sum -> to keep actualization values
-    createMatrix(&mz_r_sum, num_c, num_fs, 1);//Create and initialize matrix R_sum transpose -> to keep actualization values
+    createMatrix(&mz_l, num_l, num_fs);//Create matrix L
+    createMatrix(&mz_r, num_c, num_fs);//Create matrix R transpose
+    createMatrix(&mz_b, num_l, num_c);//Create matrix B
+    createMatrix(&mz_l_sum, num_l, num_fs);//Create matrix L_sum (aka prev)
+    createMatrix(&mz_r_sum, num_c, num_fs);//Create matrix R_sum transpose (aka prev)
     
     while(!feof(fp) && fscanf(fp, "%d %d %lf" , &lin, &col, &value)){
         mz_a2[count].x = lin;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]){
             // }
             // fprintf(stdout, "\n");
     
-    randomFillLR(num_l, num_c, num_fs);//L and R_transpose ramdom fill in.
+    randomFillLR(num_l, num_c, num_fs);//L and R_transpose ramdom fill in and copy to L_sum and R_sum.
     multMatrices_final();//B initial
             
             
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]){
     return 0;
 }
 
-void createMatrix(double*** _mz, int num_rows, int num_columns, int ini){
+void createMatrix(double*** _mz, int num_rows, int num_columns){
     *_mz = (double**)malloc(num_rows * sizeof(double*));
     if(*_mz == NULL){
         fprintf(stderr, "Erro alocar memoria - linhas\n");
@@ -120,17 +120,7 @@ void createMatrix(double*** _mz, int num_rows, int num_columns, int ini){
             fprintf(stderr, "Erro alocar memoria - colunas\n");
             exit(-1);
         }
-    }
-
-    if (ini == 1){
-#pragma omp parallel for
-        for(int i = 0; i < num_rows; i++){
-            for(int j = 0; j < num_columns; j++){
-                (*_mz)[i][j] = 0;
-            }
-        }
-    }
-    
+    }   
 }
 
 void randomFillLR(int nU, int nI, int nF){
@@ -143,11 +133,27 @@ void randomFillLR(int nU, int nI, int nF){
         for(int j = 0; j < nI; j++)
             mz_r[j][i] = RAND01 / (double) nF;
     }
+#pragma omp parallel
+ {
+#pragma omp for     
+    for(int i = 0; i < nU; i++){
+        for(int j = 0; j < nF; j++){
+            mz_l_sum[i][j] = mz_l[i][j];
+        }
+    }
+#pragma omp for
+    for(int i = 0; i < nI; i++){
+        for(int j = 0; j < nF; j++){
+            mz_r_sum[i][j] = mz_r[i][j];
+        }
+    }
+ }
 }
+
 
 void multMatrices_final(){
     double sum = 0;
-#pragma omp parallel for private(sum)    
+#pragma omp parallel for firstprivate(sum)
     for (int e = 0; e < num_l; e++) {
         for (int d = 0; d < num_c; d++) {
             for (int k = 0; k < num_fs; k++) {
@@ -161,36 +167,31 @@ void multMatrices_final(){
 
 void factorization(){
     double aux = 0;
+    double sum = 0;  
     for(int count = 0; count < max_iterations; count++){
-#pragma omp parallel private(aux)
-  {
-#pragma omp for    
+#pragma omp parallel
+ {
+#pragma omp for private(aux)
         for(int i = 0; i < non_zero_entries; i++){
-            aux = 2 * (mz_a2[i].val - mz_b[mz_a2[i].x][mz_a2[i].y]);
+            aux = -1 * alpha * 2 * (mz_a2[i].val - mz_b[mz_a2[i].x][mz_a2[i].y]);
             for(int k = 0; k < num_fs; k++){
-                mz_l_sum[mz_a2[i].x][k] += aux * (-1 * mz_r[mz_a2[i].y][k]);
-                mz_r_sum[mz_a2[i].y][k] += aux * (-1 * mz_l[mz_a2[i].x][k]);
+#pragma omp atomic
+                mz_l[mz_a2[i].x][k] += aux * (-1 * mz_r_sum[mz_a2[i].y][k]);
+#pragma omp atomic
+                mz_r[mz_a2[i].y][k] += aux * (-1 * mz_l_sum[mz_a2[i].x][k]);
             }
-        }
-#pragma omp for
-        for(int i = 0; i < non_zero_entries; i++){
-            for(int k = 0; k < num_fs; k++){
-                mz_l[mz_a2[i].x][k] += -1 * alpha * mz_l_sum[mz_a2[i].x][k];
-                mz_r[mz_a2[i].y][k] += -1 * alpha * mz_r_sum[mz_a2[i].y][k];
-                mz_l_sum[mz_a2[i].x][k] = 0;
-                mz_r_sum[mz_a2[i].y][k] = 0;
-            }
-        }
-        double sum = 0;
-#pragma omp for private(sum)     
+        }     
+#pragma omp for firstprivate(sum)
         for(int i = 0; i < non_zero_entries; i++){
             for (int k = 0; k < num_fs; k++) {
-                sum = sum + (mz_l[mz_a2[i].x][k])*(mz_r[mz_a2[i].y][k]);
+                mz_l_sum[mz_a2[i].x][k] = mz_l[mz_a2[i].x][k];
+                mz_r_sum[mz_a2[i].y][k] = mz_r[mz_a2[i].y][k];
+                sum += (mz_l[mz_a2[i].x][k])*(mz_r[mz_a2[i].y][k]);
             }
             mz_b[mz_a2[i].x][mz_a2[i].y] = sum;
             sum = 0;
         }
-  }
+ }
     }
     //---------------------------------------------------------------------------------------------------
     // fprintf(stdout, "L\n");
@@ -248,13 +249,13 @@ void result(){
         fprintf(stderr, "Erro abrir ficheiro");
         exit(-1);
     }
-#pragma omp parallel private(max_row)
+#pragma omp parallel firstprivate(max_row)
  {
-#pragma omp parallel for    
+#pragma omp for  
     for(int i = 0; i < non_zero_entries; i++){
         mz_b[mz_a2[i].x][mz_a2[i].y] = 0;
     }
-#pragma omp parallel for    
+#pragma omp for    
     for(int i = 0; i < num_l; i++){
         for(int j = 0; j < num_c; j++){
             if(mz_b[i][j] > max_row){
