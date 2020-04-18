@@ -1,0 +1,7 @@
+Tanto a versão serial como a paralela estão boas. Bom trabalho!
+
+A versão paralela com 1T está mais rápida que a serial, porque vocês aproveitaram o loop quando
+atualizam o L/R com os valores de L_sum/R_sum para calcular o valor de B para a próxima iteração 
+(na versão serial, vocês usam uma função separada). 
+Outro ponto, o uso de atomics tem um peso maior no desempenho comparado com outras soluções como
+redução. Por isso, o tempo de execução do seu programa está na média. 
