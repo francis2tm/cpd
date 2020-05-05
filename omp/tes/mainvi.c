@@ -150,6 +150,7 @@ void randomFillLR(int nU, int nI, int nF){
 }
 
 void multMatrices_final(){
+	double sum = 0;
     for (int e = 0; e < num_l; e++) {
         for (int d = 0; d < num_c; d++) {
             for (int k = 0; k < num_fs; k++) {
@@ -162,6 +163,7 @@ void multMatrices_final(){
 }
 
 void multMatrices_intre(){
+	double sum = 0;
     for(int i = 0; i < non_zero_entries; i++){
             for (int k = 0; k < num_fs; k++) {
                 sum += (mz_l[mz_a2[i].x][k])*(mz_r[mz_a2[i].y][k]);
@@ -233,11 +235,11 @@ void result(){
         fprintf(stderr, "Erro alocar vetor result\n");
         exit(-1);
     }
-    // FILE* fp = fopen("exit_test.txt", "w");
-    // if(fp == NULL){
-        // fprintf(stderr, "Erro abrir ficheiro");
-        // exit(-1);
-    // }
+    FILE* fp = fopen("exit_test.txt", "w");
+    if(fp == NULL){
+        fprintf(stderr, "Erro abrir ficheiro");
+        exit(-1);
+    }
     for(int i = 0; i < non_zero_entries; i++){
         mz_b[mz_a2[i].x][mz_a2[i].y] = 0;
     }
@@ -251,7 +253,7 @@ void result(){
         max_row = 0;
     }
     for(int i = 0; i < num_l; i++){
-        fprintf(stdout, "%d\n", items[i]);
+        fprintf(fp, "%d\n", items[i]);
     }
-    // fclose(fp);
+    fclose(fp);
 }
