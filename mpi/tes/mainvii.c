@@ -76,11 +76,11 @@ int main(int argc, char* argv[]){
         // count++;
     // }
 	
-	      fprintf(stdout, "A2\n");
-            for(int i = 0; i < non_zero_entries; i++){
-                    fprintf(stdout, "%d %d %.6f \n", mz_a2[i].x,mz_a2[i].y,mz_a2[i].val);
-            }
-            fprintf(stdout, "\n");
+	      // fprintf(stdout, "A2\n");
+            // for(int i = 0; i < non_zero_entries; i++){
+                    // fprintf(stdout, "%d %d %.6f \n", mz_a2[i].x,mz_a2[i].y,mz_a2[i].val);
+            // }
+            // fprintf(stdout, "\n");
     
 	
     randomFillLR(num_l, num_c, num_fs);//L and R_transpose ramdom fill in and copy to L_sum and R_sum.
@@ -117,23 +117,27 @@ void createMatrix(double*** _mz, int num_rows, int num_columns){
 void randomFillLR(int nU, int nI, int nF){
     srand(0);
     for(int i = 0; i < nU; i++){
-        for(int j = 0; j < nF; j++)
+        for(int j = 0; j < nF; j++){
             mz_l[i][j] = RAND01 / (double) nF;
+			mz_l_sum[i][j] = mz_l[i][j];
+		}
     }  
     for(int i = 0; i < nF; i++){
-        for(int j = 0; j < nI; j++)
+        for(int j = 0; j < nI; j++){
             mz_r[j][i] = RAND01 / (double) nF;
+			mz_r_sum[j][i] = mz_r[j][i];
+		}
     } 
-    for(int i = 0; i < nU; i++){
-        for(int j = 0; j < nF; j++){
-            mz_l_sum[i][j] = mz_l[i][j];
-        }
-    }
-    for(int i = 0; i < nI; i++){
-        for(int j = 0; j < nF; j++){
-            mz_r_sum[i][j] = mz_r[i][j];
-        }
-    }
+    // for(int i = 0; i < nU; i++){
+        // for(int j = 0; j < nF; j++){
+            // mz_l_sum[i][j] = mz_l[i][j];
+        // }
+    // }
+    // for(int i = 0; i < nI; i++){
+        // for(int j = 0; j < nF; j++){
+            // mz_r_sum[i][j] = mz_r[i][j];
+        // }
+    // }
 }
 
 
