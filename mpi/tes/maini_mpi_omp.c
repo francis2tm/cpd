@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <unistd.h>
 #include <mpi.h>
 #include <omp.h>
 
@@ -29,15 +28,14 @@ int* non_zeros_pos = NULL;
 double* non_zeros_values = NULL;
 double** mz_l = NULL;
 double** mz_r = NULL;
-// double** mz_b = NULL;
+double* b_non_zeros = NULL;
 double** mz_l_sum = NULL;
 double** mz_r_sum = NULL;
 int* r_indices = NULL;
 int* cols_copy = NULL;
 
 int main(int argc, char* argv[]){
-    
-	MPI_Status status;
+	
     int proc_id, num_procs, name_procs_len, num_threads_proc, thread_id, provided_mpi_support, my_num_nz, ini_line, fin_line, count_copy_cols;
 	char processor_name[MPI_MAX_PROCESSOR_NAME];
 	double secs, lixo;
@@ -47,9 +45,6 @@ int main(int argc, char* argv[]){
 		MPI_Finalize();
 		exit (-3);
 	}
-    MPI_Comm_rank (MPI_COMM_WORLD, &proc_id);
-    MPI_Comm_size (MPI_COMM_WORLD, &num_procs);
-	MPI_Get_processor_name(processor_name, &name_procs_len);
 	
     if(argc != 3){
 		if (!proc_id){
@@ -58,8 +53,13 @@ int main(int argc, char* argv[]){
 		MPI_Finalize();
 		exit (-2);
     }
-	
-    MPI_Barrier (MPI_COMM_WORLD);
+	num_threads_proc = atoi(argv[1]);
+
+	MPI_Comm_rank (MPI_COMM_WORLD, &proc_id);
+    MPI_Comm_size (MPI_COMM_WORLD, &num_procs);
+	MPI_Get_processor_name(processor_name, &name_procs_len);
+
+	MPI_Barrier (MPI_COMM_WORLD);
     secs = - MPI_Wtime();
 	srand(0);
 	// printf("Proc: %d here \n",proc_id);//------------------------------------------------
@@ -155,11 +155,11 @@ int main(int argc, char* argv[]){
 	
 	createMatrix(&mz_l, (fin_line - ini_line + 1), initial_info[1]);//Create matrix L
     createMatrix(&mz_r, initial_info[3], initial_info[1]);//Create matrix R transpose
-    //createMatrix(&mz_b, num_l, num_c);//Create matrix B
+    b_non_zeros = (double*) malloc (my_num_nz * sizeof(double));//create B non zeros(correspondent to A's non_zeros)
     createMatrix(&mz_l_sum, (fin_line - ini_line + 1), initial_info[1]);//Create matrix L_sum (aka prev)
 	createMatrix(&mz_r_sum, count_copy_cols, initial_info[1]);//Create matrix R_sum (aka mini) without ordered cols
 	
-	
+	//randomFillLR
 	//each one creates their L with the needed values	
 	for(int i = 0; i < ini_line; i++){
         for(int j = 0; j < initial_info[1]; j++){
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]){
     for(int i = 0; i <= (fin_line-ini_line); i++){
         for(int j = 0; j < initial_info[1]; j++){
             mz_l[i][j] = RAND01 / (double) initial_info[1];
-			mz_l_sum[i][j] = mz_l[i][j];
+			// mz_l_sum[i][j] = mz_l[i][j];
 		}
     } 
 	for(int i = fin_line + 1; i < initial_info[2]; i++){
@@ -184,17 +184,30 @@ int main(int argc, char* argv[]){
 		}
     }
 
-#pragma omp parallel for num_threads(num_threads_proc)
-	for(int i = 0; i < count_copy_cols; i++){
-        for(int j = 0; j < initial_info[1]; j++){
-            mz_r_sum[i][j] = mz_r[cols_copy[i]][j];
-			// num_threads_proc = omp_get_num_threads();
-			// thread_id = omp_get_thread_num();
-			// printf("Hello from thread %d out of %d from process %d out of %d on %s\n",thread_id, num_threads_proc, proc_id, num_procs, processor_name);
-        }
-    }
+// #pragma omp parallel for num_threads(2)
+	// for(int i = 0; i < count_copy_cols; i++){
+        // for(int j = 0; j < initial_info[1]; j++){
+            // mz_r_sum[i][j] = mz_r[cols_copy[i]][j];
+			// // num_threads_proc = omp_get_num_threads();
+			// // thread_id = omp_get_thread_num();
+			// // printf("Hello from thread %d out of %d from process %d out of %d on %s\n",thread_id, num_threads_proc, proc_id, num_procs, processor_name);
+        // }
+    // }
 
-
+	double sum = 0;
+#pragma omp parallel for firstprivate(sum) num_threads(num_threads_proc)
+	for(int i = 0; i < my_num_nz; i++){
+		for (int k = 0; k < initial_info[1]; k++) {
+			mz_l_sum[non_zeros_pos[2 * i] - ini_line][k] = mz_l[non_zeros_pos[2 * i] - ini_line][k];
+			mz_r_sum[r_indices[i]][k] = mz_r[cols_copy[r_indices[i]]][k];
+			sum += (mz_l[non_zeros_pos[2 * i] - ini_line][k])*(mz_r[cols_copy[r_indices[i]]][k]);
+		}
+		b_non_zeros[i] = sum;
+		sum = 0;
+		// num_threads_proc = omp_get_num_threads();
+		// thread_id = omp_get_thread_num();
+		// printf("Hello from thread %d out of %d from process %d out of %d on %s\n",thread_id, num_threads_proc, proc_id, num_procs, processor_name);
+	}
 	
 	MPI_Barrier (MPI_COMM_WORLD);
     secs += MPI_Wtime();
@@ -210,7 +223,7 @@ int main(int argc, char* argv[]){
 	// fflush(stdout);
 	if(!proc_id){
 		for (int i = 0;i<my_num_nz;i++){
-			printf("Proc: %d :A_nz: %d %d %f \n",proc_id,non_zeros_pos[2*i],non_zeros_pos[2*i+1],non_zeros_values[i]);//------------------------------------------------
+			printf("Proc: %d :A_nz: %d %d %f B_nz: %f\n",proc_id,non_zeros_pos[2*i],non_zeros_pos[2*i+1],non_zeros_values[i],b_non_zeros[i]);//------------------------------------------------
 			fflush(stdout);
 		}
 		
@@ -262,7 +275,6 @@ int main(int argc, char* argv[]){
 		// printf("GG nos  Time = %12.6f sec  \n",secs);//--------------------------------------------------------------------------------------------------------------------------
 		// fflush(stdout);
 	// }
-	MPI_Barrier (MPI_COMM_WORLD);
 	MPI_Finalize();
     return 0;
 }

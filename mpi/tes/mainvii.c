@@ -159,13 +159,6 @@ void factorization(){
     double sum = 0;  
     for(int count = 0; count < max_iterations; count++){
 		for(int i = 0; i < non_zero_entries; i++){
-            aux = -1 * alpha * 2 * (mz_a2[i].val - mz_b[mz_a2[i].x][mz_a2[i].y]);
-            for(int k = 0; k < num_fs; k++){
-                mz_l[mz_a2[i].x][k] += aux * (-1 * mz_r_sum[mz_a2[i].y][k]);
-                mz_r[mz_a2[i].y][k] += aux * (-1 * mz_l_sum[mz_a2[i].x][k]);
-            }
-        }
-		for(int i = 0; i < non_zero_entries; i++){
             for (int k = 0; k < num_fs; k++) {
                 mz_l_sum[mz_a2[i].x][k] = mz_l[mz_a2[i].x][k];
                 mz_r_sum[mz_a2[i].y][k] = mz_r[mz_a2[i].y][k];
@@ -173,7 +166,14 @@ void factorization(){
             }
             mz_b[mz_a2[i].x][mz_a2[i].y] = sum;
             sum = 0;
-        }		
+        }	
+		for(int i = 0; i < non_zero_entries; i++){
+            aux = -1 * alpha * 2 * (mz_a2[i].val - mz_b[mz_a2[i].x][mz_a2[i].y]);
+            for(int k = 0; k < num_fs; k++){
+                mz_l[mz_a2[i].x][k] += aux * (-1 * mz_r_sum[mz_a2[i].y][k]);
+                mz_r[mz_a2[i].y][k] += aux * (-1 * mz_l_sum[mz_a2[i].x][k]);
+            }
+        }	
     }  
 }
 
